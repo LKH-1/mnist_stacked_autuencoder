@@ -32,7 +32,7 @@ def train_layer(output_layer, layer_loss,optimizer):
     step=1
     while step <= num_steps:
         batch = mnist.train.next_batch(batch_size)
-        _out_layer, _layer_loss, _ =  sess.run([output_layer, layer_loss, optimizer],feed_dict={x:batch[0],y_labels:batch[1]})
+        _out_layer, _layer_loss, _ = sess.run([output_layer, layer_loss, optimizer],feed_dict={x:batch[0],y_labels:batch[1]})
         #print(_layer_loss)
         step += 1
     print('layer finished')
@@ -45,13 +45,14 @@ num_layers = 6
 #download and import data from the MNIST data set
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 
+
 """Create placeholder tensors for the input images in the MNIST data set.
 Each image in the MNIST data set is a hand written digit from 0-9.  The pictures are 28x28(784 total)
 pixels where each pixel intensity has been normalized between 0 and 1.
 The images will be processed in minibatches, so the shape for the input tensor is (None, 784).  There are 10 classes in this
 dataset that are one-hot encoded."""
-x = tf.placeholder(tf.float32, shape=[None, 784])
-y_labels = tf.placeholder(tf.float32, shape=[None, 10])
+x = tf.placeholder(tf.float32, shape=[None, 784], name='x_placeholder')
+y_labels = tf.placeholder(tf.float32, shape=[None, 10], name='y_labels_placeholder')
 
 #store each of the layers in a list so we can interate through and train them later
 model_layers = []
@@ -75,7 +76,8 @@ for classification.  The output can take on one of 10 values, 0-9, and the label
 use a softmax layer for the prediction."""
 last_layer = model_layers[-1]
 outputs = last_layer['encoding_layer']
-y = tf.layers.dense(outputs,10,activation=tf.nn.softmax)
+with tf.variable_scope('predicted_class'):
+    y = tf.layers.dense(outputs,10,activation=tf.nn.softmax)
 
 #For the loss use cross entropy
 cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y_labels, logits=y))
@@ -87,7 +89,7 @@ net_op = tf.train.AdamOptimizer(learning_rate=0.0005).minimize(cross_entropy,glo
 
 #create ops to check accuracy
 correct_prediction = tf.equal(tf.argmax(y_labels, 1), tf.argmax(y, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32),name='accuracy')
 #add a summary op for loging
 accuracy_summ = tf.summary.scalar('train_accuracy',accuracy)
 
